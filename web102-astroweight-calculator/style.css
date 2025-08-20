@@ -1,42 +1,38 @@
-/* Load display font */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
-/* Full-bleed transparent canvas behind the UI */
 canvas.webgl {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: -1;         /* sit behind content */
+  z-index: -1;        
   width: 100%;
   height: 100%;
 }
 
-/* Main content wrapper centered on screen */
 .content {
-  position: relative;  /* stack above canvas */
+  position: relative; 
   z-index: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh;       /* vertically center */
+  height: 100vh;
   text-align: center;
   color: white;
   padding: 15px;
   font-family: 'Orbitron', monospace;
-  overflow: hidden;    /* avoid scrollbars with full-bleed canvas */
+  overflow: hidden;
 }
 
-/* Base page reset + dark backdrop */
+
 body {
   margin: 0;
   background: black;
   font-family: 'Orbitron', monospace;
-  overflow: hidden;    /* prevent scroll when background animates */
+  overflow: hidden;
   font-stretch: expanded;
 }
 
-/* Large gradient title using background-clip to color the text */
 h1 {
   font-size: 2.5rem;
   font-weight: 900;
@@ -45,13 +41,12 @@ h1 {
   margin-bottom: 12px;
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
   background: linear-gradient(45deg, #00ffff, #ffffff, #00ffff);
-  -webkit-background-clip: text;  /* show gradient inside glyphs */
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  transform: scaleX(1.2);         /* subtle futuristic width stretch */
+  transform: scaleX(1.2);
 }
 
-/* Supporting copy under title */
 p {
   font-size: 1.1rem;
   margin-bottom: 20px;
@@ -60,7 +55,6 @@ p {
   transform: scaleX(1.1);
 }
 
-/* High-contrast labels */
 label {
   font-weight: 700;
   text-transform: uppercase;
@@ -72,7 +66,6 @@ label {
   transform: scaleX(1.15);
 }
 
-/* Shared control styling (inputs, selects, buttons) */
 input, select, button {
   background: rgba(0, 255, 255, 0.1);
   border: 2px solid rgba(0, 255, 255, 0.5);
@@ -85,20 +78,18 @@ input, select, button {
   text-transform: uppercase;
   letter-spacing: 2px;
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-  transition: all 0.3s ease;     /* smooth hover/focus */
+  transition: all 0.3s ease;
   font-size: 1rem;
   text-align: center;
   transform: scaleX(1.1);
 }
 
-/* Softer placeholder text */
 input::placeholder {
   color: rgba(0, 255, 255, 0.7);
   text-transform: none;
   letter-spacing: 1px;
 }
 
-/* Focus ring + slight glow for accessibility feedback */
 input:focus, select:focus {
   outline: none;
   border-color: #00ffff;
@@ -106,20 +97,18 @@ input:focus, select:focus {
   background: rgba(0, 255, 255, 0.15);
 }
 
-/* Custom-styled select with embedded SVG arrow */
 select {
   cursor: pointer;
   -webkit-appearance: none;
   -moz-appearance: none;
-  appearance: none;    /* hide native arrow */
+  appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 15px center;
   background-size: 15px;
-  padding-right: 45px; /* room for arrow */
+  padding-right: 45px;
 }
 
-/* Keep dropdown options on-theme */
 select option {
   background: rgba(0, 0, 0, 0.9);
   color: white;
@@ -139,7 +128,6 @@ select option:checked {
   background: rgba(0, 255, 255, 0.3);
 }
 
-/* Primary button with glow and lift-on-hover */
 button {
   background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
   border: 2px solid #00ffff;
@@ -165,7 +153,6 @@ button:active {
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
 }
 
-/* Result message box (hidden until populated) */
 #output {
   font-size: 1.3rem;
   font-weight: 700;
@@ -176,7 +163,7 @@ button:active {
   background: rgba(0, 255, 255, 0.1);
   text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
   min-height: 20px;
-  display: none;       /* toggled via .show */
+  display: none;
   letter-spacing: 2px;
   transform: scaleX(1.1);
 }
@@ -185,7 +172,6 @@ button:active {
   display: block;
 }
 
-/* Remove default number input arrows (Chrome/Safari/Firefox) */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -197,12 +183,10 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Tighten vertical rhythm between stacked elements */
 .content > * {
   margin-bottom: 10px;
 }
 
-/* Brand mark in top-right; slightly glows and brightens on hover */
 .logo {
   position: fixed;
   top: 20px;
@@ -216,7 +200,6 @@ input[type="number"] {
   opacity: 1;
 }
 
-/* Clickable logo link (strip default link styles) */
 .logo a {
   display: block;
   text-decoration: none;
@@ -224,7 +207,6 @@ input[type="number"] {
   outline: none;
 }
 
-/* Cyan-tinted logo with glow via CSS filter stack */
 .logo img {
   height: 80px;
   width: auto;
@@ -254,9 +236,6 @@ input[type="number"] {
   transform: scale(1.1);
 }
 
-/* Custom checkbox:
-   - hide native input
-   - draw box + checkmark with label pseudo-elements */
 .checkbox-container {
   display: flex;
   align-items: center;
@@ -268,10 +247,10 @@ input[type="number"] {
 input[type="checkbox"] {
   display: none;
 }
-/* Box */
+
 .checkbox-container label {
   position: relative;
-  padding-left: 35px;  /* space for box */
+  padding-left: 35px; 
   margin: 0;
   font-size: 0.9rem;
   cursor: pointer;
@@ -297,7 +276,7 @@ input[type="checkbox"] {
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
   transition: all 0.3s ease;
 }
-/* Checkmark (shown when checked) */
+
 .checkbox-container label::after {
   content: '';
   position: absolute;
@@ -322,7 +301,7 @@ input[type="checkbox"]:checked + label::after {
   opacity: 1;
   text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
 }
-/* Hover affordance */
+
 .checkbox-container label:hover::before {
   border-color: #ffffff;
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
@@ -333,9 +312,8 @@ input[type="checkbox"]:checked + label::after {
   text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
 }
 
-/* Modal overlay (dimmed backdrop with blur) */
 .modal {
-  display: none;       /* shown when opening modal */
+  display: none;
   position: fixed;
   z-index: 1000;
   left: 0;
@@ -346,7 +324,7 @@ input[type="checkbox"]:checked + label::after {
   backdrop-filter: blur(5px);
 }
 
-/* Centered modal card */
+
 .modal-content {
   position: relative;
   background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 0, 0, 0.9));
@@ -361,7 +339,6 @@ input[type="checkbox"]:checked + label::after {
   text-align: center;
 }
 
-/* Slide/fade in animation */
 @keyframes modalSlideIn {
   from {
     opacity: 0;
@@ -373,7 +350,6 @@ input[type="checkbox"]:checked + label::after {
   }
 }
 
-/* Close “X” button in modal header */
 .close {
   position: absolute;
   top: 15px;
@@ -393,7 +369,6 @@ input[type="checkbox"]:checked + label::after {
   transform: scale(1.2);
 }
 
-/* Modal title + inputs */
 .modal-content h3 {
   font-size: 1.3rem;
   font-weight: 700;
@@ -406,7 +381,7 @@ input[type="checkbox"]:checked + label::after {
 }
 
 .modal-content input {
-  width: calc(100% - 40px); /* match container padding */
+  width: calc(100% - 40px);
   max-width: 300px;
   margin: 8px auto;
   display: block;
@@ -419,7 +394,6 @@ input[type="checkbox"]:checked + label::after {
   text-align: center;
 }
 
-/* Buttons: open modal vs. add planet inside modal */
 #open-modal-button {
   background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
   border: 2px solid #00ffff;
@@ -461,7 +435,6 @@ input[type="checkbox"]:checked + label::after {
   box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
 }
 
-/* Tablet adjustments */
 @media (max-width: 768px) {
   h1 {
     font-size: 2rem;
@@ -500,7 +473,6 @@ input[type="checkbox"]:checked + label::after {
   }
 }
 
-/* Phone adjustments */
 @media (max-width: 480px) {
   h1 {
     font-size: 1.5rem;
