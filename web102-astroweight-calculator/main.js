@@ -72,17 +72,17 @@ function calculateWeight(weight, planetName) {
 // STEP 3: Handle click events
 function handleClickEvent(e) {
     let userWeight = document.getElementById('user-weight').value;
-    let planetName = document.getElementById('planets').value; // Changed from 'planet-dropdown'
+    let planetName = document.getElementById('planets').value;
 
     if (!userWeight || !planetName) {
-        let resultDiv = document.getElementById('output'); // Changed from 'result'
+        let resultDiv = document.getElementById('output'); 
         resultDiv.textContent = 'Please enter your weight and select a planet.';
         resultDiv.className = 'show';
         return;
     }
 
     let result = calculateWeight(userWeight, planetName);
-    let resultDiv = document.getElementById('output'); // Changed from 'result'
+    let resultDiv = document.getElementById('output'); 
     
     if (result === null) {
         resultDiv.textContent = 'Error: Planet not found.';

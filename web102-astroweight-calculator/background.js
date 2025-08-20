@@ -6,7 +6,7 @@ const scene = new THREE.Scene();
 
 // Define the planet's color; change this hex code to alter the planet's color
 const planetColor = '#8B7355';
-// Create a sphere for the planet: 1 is radius, 32x32 are segments for smoothness
+// Create a sphere for the planet
 const planetGeometry = new THREE.SphereGeometry(1, 32, 32);
 const planetMaterial = new THREE.MeshStandardMaterial({ color: planetColor });
 const planet = new THREE.Mesh(planetGeometry, planetMaterial);
