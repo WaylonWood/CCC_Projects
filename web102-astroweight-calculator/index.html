@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astro Weight Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.138.1/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.138.1/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+  <canvas class="webgl"></canvas>
+  <div class="logo">
+    <a href="https://cccareers.org/" target="_blank" rel="noopener noreferrer">
+      <img src="CCC_logo.png" alt="Company Logo" />
+    </a>
+  </div>
+  <div class="content">
+    <h1>Astro Weight Calculator</h1>
+    <p>Enter your weight and select a planet to find out your weight on that planet</p> 
+    <label for="user-weight">Your Weight (lbs):</label>
+    <input type="number" id="user-weight" />  
+    <label for="planets">Select a Planet:</label>
+    <select id="planets">
+      <option value="">Select a planet</option>
+    </select>
+    <div class="checkbox-container">
+      <input type="checkbox" id="exclude-pluto" />
+      <label for="exclude-pluto">Exclude Pluto (not a planet)</label>
+    </div>
+    <button id="open-modal-button">Add Custom Planet</button>
+    <button id="calculate-button">Calculate</button>
+    <p id="output"></p>
+  </div>
+  <div id="planet-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Add Custom Planet</h3>
+      <label for="custom-planet-name">Planet Name:</label>
+      <input type="text" id="custom-planet-name" placeholder="Enter planet name" />
+      <label for="custom-planet-multiplier">Gravity Multiplier:</label>
+      <input type="number" id="custom-planet-multiplier" step="0.001" placeholder="e.g. 1.5" />
+      <button id="add-planet-button">Add Planet</button>
+    </div>
+  </div>
+  <script src="background.js"></script>
+  <script src="main.js" charset="utf-8"></script>
+</body>
+
+</html>

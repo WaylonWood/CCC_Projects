@@ -1,0 +1,545 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+canvas.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+  color: white;
+  padding: 15px;
+  font-family: 'Orbitron', monospace;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: black;
+  font-family: 'Orbitron', monospace;
+  overflow: hidden;
+  font-stretch: expanded;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin-bottom: 12px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(45deg, #00ffff, #ffffff, #00ffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transform: scaleX(1.2);
+}
+
+p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  letter-spacing: 1px;
+  transform: scaleX(1.1);
+}
+
+label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  font-size: 1rem;
+  transform: scaleX(1.15);
+}
+
+input, select, button {
+  background: rgba(0, 255, 255, 0.1);
+  border: 2px solid rgba(0, 255, 255, 0.5);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 10px;
+  margin: 6px;
+  font-family: 'Orbitron', monospace;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  text-align: center;
+  transform: scaleX(1.1);
+}
+
+input::placeholder {
+  color: rgba(0, 255, 255, 0.7);
+  text-transform: none;
+  letter-spacing: 1px;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #00ffff;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+  background: rgba(0, 255, 255, 0.15);
+}
+
+select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 15px;
+  padding-right: 45px;
+}
+
+select option {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 10px;
+  border: none;
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transform: scaleX(1.1);
+}
+
+select option:hover {
+  background: rgba(0, 255, 255, 0.2);
+}
+
+select option:checked {
+  background: rgba(0, 255, 255, 0.3);
+}
+
+button {
+  background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  border: 2px solid #00ffff;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 15px 25px;
+  margin-top: 15px;
+  transition: all 0.3s ease;
+  letter-spacing: 3px;
+  transform: scaleX(1.15);
+}
+
+button:hover {
+  background: linear-gradient(45deg, rgba(0, 255, 255, 0.4), rgba(255, 255, 255, 0.2));
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+  transform: translateY(-3px) scaleX(1.15);
+  border-color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+button:active {
+  transform: translateY(-1px) scaleX(1.15);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+}
+
+#output {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-top: 15px;
+  padding: 15px;
+  border: 2px solid rgba(0, 255, 255, 0.5);
+  border-radius: 10px;
+  background: rgba(0, 255, 255, 0.1);
+  text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  min-height: 20px;
+  display: none;
+  letter-spacing: 2px;
+  transform: scaleX(1.1);
+}
+
+#output.show {
+  display: block;
+}
+
+/* Remove default number input arrows */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* Add compact spacing between form groups */
+.content > * {
+  margin-bottom: 10px;
+}
+
+/* Logo styling */
+.logo {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.logo:hover {
+  opacity: 1;
+}
+
+/* Style the logo link to remove default styling */
+.logo a {
+  display: block;
+  text-decoration: none;
+  border: none;
+  outline: none;
+}
+
+.logo img {
+  height: 80px;
+  width: auto;
+  filter: 
+    brightness(0) 
+    saturate(100%) 
+    invert(50%) 
+    sepia(100%) 
+    saturate(1000%) 
+    hue-rotate(180deg) 
+    brightness(1.2)
+    drop-shadow(0 0 15px rgba(0, 255, 255, 0.5));
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.logo img:hover {
+  filter: 
+    brightness(0) 
+    saturate(100%) 
+    invert(50%) 
+    sepia(100%) 
+    saturate(1200%) 
+    hue-rotate(180deg) 
+    brightness(1.4)
+    drop-shadow(0 0 25px rgba(0, 255, 255, 0.8));
+  transform: scale(1.1);
+}
+
+/* Checkbox styling */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  justify-content: center;
+}
+
+/* Hide the default checkbox */
+input[type="checkbox"] {
+  display: none;
+}
+
+/* Create custom checkbox */
+.checkbox-container label {
+  position: relative;
+  padding-left: 35px;
+  margin: 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transform: scaleX(1.1);
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Custom checkbox box */
+.checkbox-container label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 255, 255, 0.5);
+  border-radius: 4px;
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* Custom checkbox checkmark */
+.checkbox-container label::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid #00ffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+/* Checked state */
+input[type="checkbox"]:checked + label::before {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: #00ffff;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+input[type="checkbox"]:checked + label::after {
+  opacity: 1;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+}
+
+/* Hover effects */
+.checkbox-container label:hover::before {
+  border-color: #ffffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+}
+
+.checkbox-container label:hover {
+  color: #ffffff;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+}
+
+/* Modal Background */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+}
+
+/* Modal Content */
+.modal-content {
+  position: relative;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 0, 0, 0.9));
+  margin: 10% auto;
+  padding: 30px;
+  border: 2px solid rgba(0, 255, 255, 0.5);
+  border-radius: 15px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+  text-align: center;
+}
+
+/* Modal Animation */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Close Button */
+.close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  color: #00ffff;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Orbitron', monospace;
+}
+
+.close:hover,
+.close:focus {
+  color: #ffffff;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+  transform: scale(1.2);
+}
+
+/* Modal Title */
+.modal-content h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  color: #00ffff;
+  text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+  transform: scaleX(1.1);
+}
+
+/* Modal Input Styling */
+.modal-content input {
+  width: calc(100% - 40px); /* Account for padding */
+  max-width: 300px;
+  margin: 8px auto;
+  display: block;
+}
+
+.modal-content label {
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+/* Open Modal Button */
+#open-modal-button {
+  background: linear-gradient(45deg, rgba(0, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  border: 2px solid #00ffff;
+  color: white;
+  margin-top: 10px;
+}
+
+#open-modal-button:hover {
+  background: linear-gradient(45deg, rgba(0, 255, 255, 0.4), rgba(255, 255, 255, 0.2));
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+  border-color: #ffffff;
+  transform: translateY(-3px) scaleX(1.15);
+}
+
+#open-modal-button:active {
+  transform: translateY(-1px) scaleX(1.15);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+}
+
+/* Add Planet Button in Modal */
+#add-planet-button {
+  background: linear-gradient(45deg, rgba(0, 255, 0, 0.2), rgba(255, 255, 255, 0.1));
+  border: 2px solid #00ff00;
+  color: white;
+  margin: 20px auto 10px auto;
+  width: calc(100% - 40px);
+  max-width: 300px;
+  display: block;
+}
+
+#add-planet-button:hover {
+  background: linear-gradient(45deg, rgba(0, 255, 0, 0.4), rgba(255, 255, 255, 0.2));
+  box-shadow: 0 0 30px rgba(0, 255, 0, 0.6);
+  border-color: #ffffff;
+  transform: translateY(-3px) scaleX(1.15);
+}
+
+#add-planet-button:active {
+  transform: translateY(-1px) scaleX(1.15);
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+}
+/* Responsive design media queries */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+    letter-spacing: 3px;
+    transform: scaleX(1.15);
+  }
+  
+  input, select, button {
+    font-size: 0.9rem;
+    padding: 10px 15px;
+    letter-spacing: 1.5px;
+    transform: scaleX(1.08);
+  }
+  
+  .content {
+    padding: 10px;
+  }
+  
+  .logo {
+    top: 15px;
+    right: 15px;
+  }
+  
+  .logo img {
+    height: 65px;
+  }
+  
+  .modal-content {
+    margin: 15% auto;
+    padding: 20px;
+    width: 95%;
+  }
+  
+  .modal-content h3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    transform: scaleX(1.1);
+  }
+  
+  p {
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    transform: scaleX(1.05);
+  }
+  
+  input, select, button {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    letter-spacing: 1px;
+    transform: scaleX(1.05);
+  }
+  
+  label {
+    letter-spacing: 1.5px;
+    transform: scaleX(1.1);
+  }
+  
+  .logo {
+    top: 10px;
+    right: 10px;
+  }
+  
+  .logo img {
+    height: 50px;
+  }
+  
+  .modal-content {
+    margin: 20% auto;
+    padding: 15px;
+  }
+  
+  .close {
+    font-size: 24px;
+    top: 10px;
+    right: 15px;
+  }
+  
+  .checkbox-container {
+    margin: 10px 0;
+  }
+  
+  .checkbox-container label {
+    font-size: 0.8rem;
+  }
+}
