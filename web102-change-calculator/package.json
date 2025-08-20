@@ -1,0 +1,13 @@
+{
+    "name": "change-calculator",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "npx node-static . -p 8888",
+        "test": "npx playwright test",
+        "postinstall": "npx playwright install"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.52.0",
+        "node-static": "^0.7.11"
+    }
+}
