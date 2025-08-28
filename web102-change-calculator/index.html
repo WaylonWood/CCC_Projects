@@ -1,14 +1,87 @@
-
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Change Calculator</title>
-  </head>
-  <body>
-    <!-- Write your markup here -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Change Calculator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Change Calculator</h1>
+      <p>Calculate exact change for cash transactions</p>
+    </header>
 
-    <!-- Don't forget to add your <script> tag here -->
+    <div class="main-grid">
+      <!-- Input Section -->
+      <div class="input-card">
+        <div class="input-content">
+          <h2>Transaction Details</h2>
+          <p class="subtitle">Enter the sale amount and payment received</p>
+          <div class="form-section">
+            <div class="form-group">
+              <label for="amount-due"> Sale Amount ($)</label>
+              <input type="number" id="amount-due" step="0.01" min="0" placeholder="13.75">
+            </div>
+            <div class="form-group">
+              <label for="amount-received"> Amount Received ($)</label>
+              <input type="number" id="amount-received" step="0.01" min="0" placeholder="20.00">
+            </div>
+          </div>
+          <div id="message" class="message"></div>
+          <div id="error" class="message"></div>
+        </div>
+        <div class="button-group">
+          <button id="calculate-change" class="btn btn-primary">Calculate Change</button>
+          <button id="clear-fields" class="btn btn-secondary">Clear All</button>
+        </div>
+      </div>
+      <!-- Results Section -->
+        <div class="results-area">
+          <div id="change-display" class="change-display">
+            <div class="change-label">Total Change Owed</div>
+            <div id="change-amount" class="change-amount">$0.00</div>
+          </div>
+          <div class="breakdown-cards-wrapper">
+            <div class="breakdown-card bills-card">
+              <div class="denomination-grid">
+                <div class="denomination">
+                  <img src="images/1.png" alt="$1 Bill" class="denomination-image bill-image" />
+                  <div class="denomination-label">$1 Bills</div>
+                  <p class="denomination-value" id="dollars-output">0</p>
+                </div>
+              </div>
+            </div>
+            <div class="breakdown-card coins-card">
+              <div class="denomination-grid">
+                <div class="denomination">
+                  <img src="images/Quarter.png" alt="Quarter" class="denomination-image coin-image" />
+                  <div class="denomination-label">Quarters</div>
+                  <p class="denomination-value" id="quarters-output">0</p>
+                </div>
+                <div class="denomination">
+                  <img src="images/Dime.png" alt="Dime" class="denomination-image coin-image" />
+                  <div class="denomination-label">Dimes</div>
+                  <p class="denomination-value" id="dimes-output">0</p>
+                </div>
+                <div class="denomination">
+                  <img src="images/Nickel.jpg" alt="Nickel" class="denomination-image coin-image" />
+                  <div class="denomination-label">Nickels</div>
+                  <p class="denomination-value" id="nickels-output">0</p>
+                </div>
+                <div class="denomination">
+                  <img src="images/Penny.png" alt="Penny" class="denomination-image coin-image" />
+                  <div class="denomination-label">Pennies</div>
+                  <p class="denomination-value" id="pennies-output">0</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+  </div>
 
-  </body>
+  <script src="main.js"></script>
+</body>
 </html>
