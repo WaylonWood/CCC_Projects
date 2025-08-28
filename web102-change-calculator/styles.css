@@ -1,13 +1,16 @@
+/* Layout for bills and coins cards */
 .breakdown-cards-wrapper {
   display: flex;
   gap: 30px;
   width: 100%;
   justify-content: center;
 }
+/* Card styles for bills and coins */
 .bills-card, .coins-card {
   flex: 1 1 0;
   margin-bottom: 0;
 }
+/* Bill image styling */
 .bills-card .bill-image {
   width: 60px;
   height: 40px;
@@ -17,6 +20,7 @@
   background: #fff;
   margin-bottom: 10px;
 }
+/* Coin image styling */
 .coins-card .coin-image {
   width: 48px;
   height: 48px;
@@ -26,12 +30,15 @@
   background: #fff;
   margin-bottom: 10px;
 }
+/* Bills card margin */
 .bills-card {
   margin-bottom: 20px;
 }
+/* Coins card margin */
 .coins-card {
   margin-bottom: 0;
 }
+/* Denomination value text styling */
 p#dollars-output,
 p#quarters-output,
 p#dimes-output,
@@ -43,6 +50,7 @@ p#pennies-output {
   font-variant-numeric: tabular-nums;
   margin-bottom: 0;
 }
+/* Denomination label styling */
 .denomination-label {
   font-size: 2rem;
   font-weight: 700;
@@ -78,7 +86,7 @@ p#pennies-output {
   margin: 0;
   padding: 0;
 }
-
+/* Page base styles */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
@@ -87,41 +95,38 @@ body {
   min-height: 100vh;
   padding: 20px;
 }
-
+/* Container for main content */
 .container {
   max-width: 1200px;
   margin: 0 auto;
 }
-
-/* Header */
+/* Center header and add spacing below */
 .header {
   text-align: center;
   margin-bottom: 30px;
 }
-
+/* Header title styling */
 .header h1 {
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--accent);
   margin-bottom: 8px;
 }
-
+/* Header subtitle styling */
 .header p {
   color: var(--text-secondary);
   font-size: 1.1rem;
 }
-
-/* Main Grid - Keep start alignment */
+/* Layout for main grid, aligns input and results */
 .main-grid {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 30px;
-  align-items: start; /* Keep this as start */
+  align-items: start;
   position: relative;
   min-height: 500px;
 }
-
-/* Input Card - Fixed height to match results */
+/* Styles for input card section */
 .input-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -137,10 +142,10 @@ body {
   transform: translateX(-50%);
   transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 2;
-  height: 650px; /* Fixed height to match the results area */
+  height: 650px;
   justify-content: space-between;
 }
-
+/* Input card style when calculated */
 .main-grid.calculated .input-card {
   position: relative;
   left: auto;
@@ -148,117 +153,113 @@ body {
   transform: translateX(0);
   width: 100%;
 }
-
-/* Keep the spacer to push buttons to bottom */
+/* Spacer for button alignment in input card */
 .spacer {
   flex: 1;
   min-height: 20px;
 }
-
-/* Input Content - Compact Spacing */
+/* Layout for input content inside card */
 .input-content {
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Reduced from 25px */
+  gap: 20px;
 }
-
+/* Input card heading */
 .input-card h2 {
-  font-size: 1.6rem; /* Slightly smaller */
+  font-size: 1.6rem;
   font-weight: 600;
   color: var(--text-primary);
   text-align: center;
-  margin-bottom: 5px; /* Reduced */
+  margin-bottom: 5px;
 }
-
+/* Subtitle for input card */
 .subtitle {
   text-align: center;
   color: var(--text-secondary);
-  font-size: 0.9rem; /* Slightly smaller */
-  margin-bottom: 15px; /* Reduced */
+  font-size: 0.9rem;
+  margin-bottom: 15px;
 }
-
+/* Form section layout */
 .form-section {
   display: flex;
   flex-direction: column;
-  gap: 18px; /* Reduced from 20px */
+  gap: 18px;
 }
-
+/* Form group layout */
 .form-group {
   display: flex;
   flex-direction: column;
 }
-
+/* Form label styling */
 .form-group label {
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 6px; /* Reduced from 8px */
-  font-size: 0.95rem; /* Slightly smaller */
+  margin-bottom: 6px;
+  font-size: 0.95rem;
 }
-
+/* Form input styling */
 .form-group input {
-  padding: 12px 16px; /* Reduced from 15px 18px */
+  padding: 12px 16px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: 1rem; /* Reduced from 1.1rem */
+  font-size: 1rem;
   font-weight: 500;
   transition: var(--transition);
 }
-
+/* Input focus styling */
 .form-group input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
   background: rgba(255, 255, 255, 0.05);
 }
-
+/* Button group layout */
 .button-group {
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Reduced from 12px */
-  margin-top: 15px; /* Reduced from 20px */
+  gap: 10px;
+  margin-top: 15px;
 }
-
+/* Button base styles */
 .btn {
-  padding: 12px 20px; /* Reduced from 15px */
+  padding: 12px 20px;
   border: none;
   border-radius: var(--radius);
   font-weight: 600;
-  font-size: 0.95rem; /* Slightly smaller */
+  font-size: 0.95rem;
   cursor: pointer;
   transition: var(--transition);
 }
-
+/* Primary button styles */
 .btn-primary {
   background: var(--accent);
   color: white;
 }
-
+/* Primary button hover styles */
 .btn-primary:hover {
   background: var(--accent-dark);
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(6, 182, 212, 0.3);
 }
-
+/* Secondary button styles */
 .btn-secondary {
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border);
 }
-
+/* Secondary button hover styles */
 .btn-secondary:hover {
   background: var(--surface-hover);
   color: var(--text-primary);
   border-color: var(--text-secondary);
 }
-
-/* Remove the spacer since we don't need full height anymore */
+/* Hide spacer if not needed */
 .spacer {
   display: none;
 }
-
-/* Results Area - Smooth Slide In */
+/* Container for results and breakdown cards */
 .results-area {
   display: grid;
   gap: 20px;
@@ -268,15 +269,14 @@ body {
   pointer-events: none;
   align-content: start;
 }
-
+/* Results area style when calculated */
 .main-grid.calculated .results-area {
   opacity: 1;
   transform: translateX(0) scale(1);
   pointer-events: auto;
   transition-delay: 0.2s;
 }
-
-/* Change Display */
+/* Animated box for total change owed */
 .change-display {
   background: linear-gradient(135deg, var(--accent), var(--success));
   border-radius: var(--radius-lg);
@@ -288,19 +288,19 @@ body {
   transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   margin-bottom: 20px;
 }
-
+/* Animation for change display */
 .change-display.animate {
   opacity: 1;
   transform: translateY(0) scale(1);
 }
-
+/* Change display heading */
 .change-display h2 {
   font-size: 1.2rem;
   font-weight: 500;
   margin-bottom: 10px;
   opacity: 0.9;
 }
-
+/* Change amount text styling */
 .change-amount {
   font-size: 3rem;
   font-weight: 700;
@@ -309,21 +309,20 @@ body {
   letter-spacing: 2px;
   transition: color 0.3s;
 }
-
+/* Change label styling */
 .change-label {
   font-size: 1.1rem;
   opacity: 0.9;
   font-weight: 600;
   margin-bottom: 10px;
 }
-
-/* Breakdown Cards with Smooth Slide */
+/* Grid layout for denominations inside cards */
 .breakdown-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
 }
-
+/* Card styles for breakdown sections */
 .breakdown-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -334,20 +333,20 @@ body {
   transform: translateY(40px) rotateX(15deg);
   transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
+/* Animation for breakdown card */
 .breakdown-card.animate {
   opacity: 1;
   transform: translateY(0) rotateX(0deg);
 }
-
+/* Animation delay for first breakdown card */
 .breakdown-card:nth-child(1) {
   transition-delay: 0.1s;
 }
-
+/* Animation delay for second breakdown card */
 .breakdown-card:nth-child(2) {
   transition-delay: 0.2s;
 }
-
+/* Breakdown card heading */
 .breakdown-card h3 {
   font-size: 1.2rem;
   font-weight: 600;
@@ -357,14 +356,13 @@ body {
   align-items: center;
   gap: 10px;
 }
-
+/* Grid layout for denominations */
 .denomination-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
 }
-
-/* Enhanced Denomination Cards */
+/* Styles for each denomination box */
 .denomination {
   text-align: center;
   padding: 15px;
@@ -379,18 +377,17 @@ body {
     transition: opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
+/* Animation for denomination reveal */
 .denomination.animate {
   opacity: 1;
   transform: scale(1) rotateY(0deg);
 }
-
+/* Denomination hover effect */
 .denomination:hover {
   background: rgba(255, 255, 255, 0.05);
   transform: scale(1.05) rotateY(0deg);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
-
 /* Currency Image */
 .denomination-image {
   width: 40px;
@@ -400,29 +397,28 @@ body {
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
-
+/* Image full reveal on hover */
 .denomination:hover .denomination-image {
   opacity: 1;
   transform: rotateY(180deg) scale(1.1);
 }
-
+/* Denomination label styling */
 .denomination-label {
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin-bottom: 8px;
   font-weight: 500;
 }
-
+/* Denomination value styling */
 .denomination-value {
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
-
 /* Messages */
 .message {
-  padding: 10px 14px; /* Slightly smaller */
+  padding: 10px 14px;
   border-radius: var(--radius);
   font-weight: 500;
   display: none;
@@ -431,46 +427,43 @@ body {
   pointer-events: auto;
   transform: scale(1) rotateY(0deg);
     transform: scale(1) rotateY(0deg); 
-  font-size: 0.9rem; /* Slightly smaller */
+  font-size: 0.9rem;
 }
-
+/* Show message on display */
 .message.show {
   display: block;
   opacity: 1;
   transform: translateY(0);
 }
-
+/* Success message styling */
 .message.success {
   background: rgba(16, 185, 129, 0.1);
   color: var(--success);
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
-
+/* Error message styling */
 .message.error {
   background: rgba(239, 68, 68, 0.1);
   color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
-
 /* Staggered Animation Delays for Denominations */
 .denomination:nth-child(1) { transition-delay: 0.1s; }
 .denomination:nth-child(2) { transition-delay: 0.2s; }
 .denomination:nth-child(3) { transition-delay: 0.3s; }
 .denomination:nth-child(4) { transition-delay: 0.4s; }
-
 /* Pulse animation for active values */
 @keyframes pulse {
   0% { transform: scale(1); }
   50% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
-
+/* Highlight active denomination value */
 .denomination-value.highlight {
   animation: pulse 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
   color: var(--success);
 }
-
-/* Responsive */
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .main-grid {
     grid-template-columns: 1fr;
@@ -534,7 +527,7 @@ body {
     margin-bottom: 0;
   }
 }
-
+/* Smaller adjustments for mobile devices */
 @media (max-width: 480px) {
   body {
     padding: 15px;
@@ -549,7 +542,6 @@ body {
     height: 28px;
   }
 }
-
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -558,10 +550,9 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
-
 /* Currency Image - Much wider for full bill visibility */
 .denomination-image {
-  width: 90px; /* Much wider for bills */
+  width: 90px; 
   height: 45px; 
   margin: 0 auto 10px;
   opacity: 0.8;
@@ -575,21 +566,13 @@ body {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
-.denomination-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* This will show the full image */
-  border-radius: 3px;
-}
-
+/* Image full reveal on hover */
 .denomination:hover .denomination-image {
   opacity: 1;
-  transform: scale(1.05); /* Smaller scale to prevent overflow */
+  transform: scale(1.05); 
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
   border-color: var(--accent);
 }
-
 /* Coins - Keep them circular */
 .denomination[data-denomination*="quarters"] .denomination-image,
 .denomination[data-denomination*="dimes"] .denomination-image,
@@ -599,45 +582,42 @@ body {
   height: 50px;
   border-radius: 50%;
 }
-
+/* Adjust dime size */
 .denomination[data-denomination*="dimes"] .denomination-image {
   width: 45px;
   height: 45px;
 }
-
+/* Adjust penny size */
 .denomination[data-denomination*="pennies"] .denomination-image {
   width: 48px;
   height: 48px;
 }
-
 /* Make the denomination cards wider to accommodate the larger bill images */
 .denomination {
   text-align: center;
-  padding: 15px 10px; /* Less horizontal padding to make room */
+  padding: 15px 10px; 
   background: rgba(255, 255, 255, 0.02);
   border-radius: var(--radius);
   position: relative;
-  overflow: visible; /* Allow slight overflow for hover effects */
+  overflow: visible;
   opacity: 0; 
   transform: scale(0.6) rotateY(180deg); 
   transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  min-height: 130px; /* Taller to accommodate larger images */
+  min-height: 130px; 
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
-
 /* Make the grid accommodate wider cards */
 .denomination-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px; /* Slightly smaller gap to make room */
+  gap: 12px; 
 }
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .denomination-image {
-    width: 75px; /* Still wide for bills */
+    width: 75px;
     height: 38px;
   }
   
@@ -664,7 +644,7 @@ body {
     padding: 12px 8px;
   }
 }
-
+/* Further adjustments for small mobile devices */
 @media (max-width: 480px) {
   .denomination-image {
     width: 65px;

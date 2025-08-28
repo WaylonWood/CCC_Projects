@@ -1,4 +1,7 @@
+// Handles input, calculation, output, and UI animation for the change calculator web app
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Get DOM elements for inputs, buttons, and outputs
     const amountDueInput = document.getElementById('amount-due');
     const amountReceivedInput = document.getElementById('amount-received');
     const calculateButton = document.getElementById('calculate-change');
@@ -15,20 +18,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const changeDisplay = document.getElementById('change-display');
     const changeAmount = document.getElementById('change-amount');
 
+    // Reset all outputs and remove animations
     function clearOutputs() {
-    dollarsOutput.textContent = '0';
-    quartersOutput.textContent = '0';
-    dimesOutput.textContent = '0';
-    nickelsOutput.textContent = '0';
-    penniesOutput.textContent = '0';
-    animateChangeAmount(0);
-    changeDisplay.classList.remove('animate');
-    breakdownCards.forEach(card => card.classList.remove('animate'));
-    denominations.forEach(denom => denom.classList.remove('animate'));
-    resultsArea.style.opacity = '0';
-    mainGrid.classList.remove('calculated');
+        dollarsOutput.textContent = '0';
+        quartersOutput.textContent = '0';
+        dimesOutput.textContent = '0';
+        nickelsOutput.textContent = '0';
+        penniesOutput.textContent = '0';
+        animateChangeAmount(0);
+        changeDisplay.classList.remove('animate');
+        breakdownCards.forEach(card => card.classList.remove('animate'));
+        denominations.forEach(denom => denom.classList.remove('animate'));
+        resultsArea.style.opacity = '0';
+        mainGrid.classList.remove('calculated');
     }
 
+    // Calculate change and update outputs/animations
     function calculateChange() {
         const due = parseFloat(amountDueInput.value);
         const received = parseFloat(amountReceivedInput.value);
@@ -43,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
         animateChangeAmount(change);
         changeDisplay.classList.add('animate');
 
+        // Calculate denominations
         let cents = Math.round(change * 100);
         const dollars = Math.floor(cents / 100);
         cents %= 100;
@@ -54,13 +60,14 @@ document.addEventListener('DOMContentLoaded', function () {
         cents %= 5;
         const pennies = cents;
 
+        // Update output values
         dollarsOutput.textContent = dollars;
         quartersOutput.textContent = quarters;
         dimesOutput.textContent = dimes;
         nickelsOutput.textContent = nickels;
         penniesOutput.textContent = pennies;
 
-        // Trigger animations
+        // Animate cards and denominations
         mainGrid.classList.add('calculated');
         resultsArea.style.opacity = '1';
         breakdownCards.forEach((card, index) => {
@@ -75,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Animate the change amount counting up
+    // Animate the change amount value in the display
     function animateChangeAmount(targetAmount) {
         const duration = 800;
         const start = parseFloat(changeAmount.textContent.replace('$','')) || 0;
@@ -93,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
         requestAnimationFrame(animate);
     }
 
+    // Button event listeners
     calculateButton.addEventListener('click', calculateChange);
     clearButton.addEventListener('click', function () {
         amountDueInput.value = '';
