@@ -1,0 +1,16 @@
+{
+    "name": "san-diego-top-spots",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "npx static -p 3000",
+        "test": "npx playwright test",
+        "postinstall": "npx playwright install"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.52.0",
+        "node-static": "^0.7.11"
+    },
+    "dependencies": {
+        "jquery": "^3.7.1"
+    }
+}
