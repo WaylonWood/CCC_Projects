@@ -1,0 +1,21 @@
+{
+  "name": "hello-http-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "axios": "^0.16.2",
+    "chai": "^4.0.2",
+    "mocha": "^3.5.0"
+  }
+}
