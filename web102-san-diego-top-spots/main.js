@@ -3,7 +3,6 @@ let markers = [];
 let userLocation = null;
 let allSpots = [];
 
-// Cache DOM elements for better performance
 const elements = {
     container: document.getElementById("topspots-container"),
     resultsCount: document.getElementById("resultsCount"),
@@ -15,7 +14,6 @@ const elements = {
     filters: document.querySelectorAll(".filter-option input[type='checkbox']")
 };
 
-// Keywords used for filtering
 const FILTER_KEYWORDS = {
     outdoor: ["park", "zoo", "safari", "hike", "trail", "surf", "beach", "outdoor", "run"],
     cultural: ["museum", "art", "tour", "historic", "culture", "mummies", "ghost", "gaslamp", "aquarium", "comic con", "convention"],
@@ -24,7 +22,6 @@ const FILTER_KEYWORDS = {
     family: ["family", "kid", "children", "zoo", "aquarium", "museum", "park", "safari"]
 };
 
-// Initializes the Google Map
 function initMap() {
     const defaultCenter = { lat: 32.7157, lng: -117.1611 };
     map = new google.maps.Map(document.getElementById("map"), {
@@ -43,7 +40,6 @@ function initMap() {
 }
 window.initMap = initMap;
 
-// Handles user location detection and updates distances
 function handleUserLocation(position) {
     userLocation = {
         lat: position.coords.latitude,
@@ -54,7 +50,6 @@ function handleUserLocation(position) {
     updateDistancesAndRepopulate();
 }
 
-// Displays the temporary location indicator
 function showLocationIndicator() {
     if (!elements.locationIndicator) return;
     const indicator = elements.locationIndicator;
@@ -72,7 +67,6 @@ function showLocationIndicator() {
     }, 3000);
 }
 
-// Loads top spots data and populates the table + markers
 function loadTopSpotsData() {
     fetch("data.json")
         .then(res => {
@@ -116,7 +110,6 @@ function loadTopSpotsData() {
 }
 document.addEventListener("DOMContentLoaded", loadTopSpotsData);
 
-// Updates distances when user location is available
 function updateDistancesAndRepopulate() {
     if (!allSpots.length || !userLocation) return;
     allSpots.forEach(spot => {
@@ -126,7 +119,6 @@ function updateDistancesAndRepopulate() {
     applyFilters();
 }
 
-// Adds the user's marker to the map
 function addUserMarker(location) {
     new google.maps.Marker({
         position: location,
@@ -142,14 +134,12 @@ function addUserMarker(location) {
     });
 }
 
-// Attaches event listeners to filter checkboxes
 function setupFilters() {
     elements.filters.forEach(checkbox => {
         checkbox.addEventListener("change", applyFilters);
     });
 }
 
-// Filters the spots based on user-selected options
 function applyFilters() {
     const filters = {
         outdoor: document.getElementById("outdoor").checked,
@@ -176,7 +166,6 @@ function applyFilters() {
     addMarkers(filteredSpots);
 }
 
-// Populates the spots table and cards
 function populateTable(rows) {
     if (elements.resultsCount) {
         elements.resultsCount.textContent = `${rows.length} results`;
@@ -243,7 +232,6 @@ function populateTable(rows) {
     populateHiddenTable(rows);
 }
 
-// Populates a hidden HTML table for testing purposes
 function populateHiddenTable(rows) {
     const tbody = document.getElementById("topspots-tbody");
     if (!tbody) return;
@@ -260,7 +248,6 @@ function populateHiddenTable(rows) {
     });
 }
 
-// Adds markers to the map and fits them within view
 function addMarkers(rows) {
     markers.forEach(marker => marker.setMap(null));
     markers = [];
@@ -297,8 +284,7 @@ function addMarkers(rows) {
     }
 }
 
-// Picks the best icon based on the spot's description
-function getActivityIcon(description, name) {
+function getActivityIcon(text) {
     const text = (description + " " + name).toLowerCase();
     if (text.includes("zoo") || text.includes("animal") || text.includes("safari")) return "🦁";
     if (text.includes("beach") || text.includes("surf")) return "🏄‍♂️";
@@ -313,7 +299,6 @@ function getActivityIcon(description, name) {
     return "🏛️";
 }
 
-// Displays a custom map tooltip
 function showMapTooltip(mouseEvent, title, description, icon) {
     if (!elements.mapTooltip) return;
     elements.tooltipImage.textContent = icon;
@@ -328,7 +313,6 @@ function showMapTooltip(mouseEvent, title, description, icon) {
     elements.mapTooltip.classList.add("show");
 }
 
-// Hides the map tooltip
 function hideMapTooltip() {
     if (elements.mapTooltip) elements.mapTooltip.classList.remove("show");
 }
