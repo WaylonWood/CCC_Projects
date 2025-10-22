@@ -1,0 +1,262 @@
+/* Import cyberpunk custom styles */
+@import './styles/cyberpunk.css';
+
+/* Import JetBrains Mono font for better cyberpunk aesthetics */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'JetBrains Mono', 'Monaco', 'Consolas', monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #0a0a0f 0%, #121218 50%, #1a1a24 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Cyberpunk card styles with enhanced hover effects */
+.card {
+  @apply bg-cyber-darker border border-cyber-border rounded-lg shadow-lg p-6 backdrop-blur-sm;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+  transition: left 0.6s ease;
+  z-index: 1;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 255, 65, 0.15), 0 0 20px rgba(0, 212, 255, 0.1);
+  border-color: rgba(0, 255, 65, 0.3);
+}
+
+.card:hover::before {
+  left: 100%;
+}
+
+/* Enhanced status indicators */
+.status-indicator {
+  @apply inline-flex items-center px-3 py-2 rounded-lg text-sm font-mono font-bold border shadow-lg;
+}
+
+.status-up {
+  @apply bg-success-500/10 text-success-500;
+  border-color: rgba(0, 255, 65, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.25);
+}
+
+.status-down {
+  @apply bg-danger-500/10 text-danger-500;
+  border-color: rgba(255, 0, 128, 0.5);
+  box-shadow: 0 0 15px rgba(255, 0, 128, 0.25);
+}
+
+.status-unknown {
+  @apply bg-gray-600/10 text-gray-400 border-gray-600/50;
+}
+
+/* Threat level indicators */
+.threat-low {
+  @apply bg-success-500/10 text-success-500;
+  border-color: rgba(0, 255, 65, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.25);
+}
+
+.threat-medium {
+  @apply bg-warning-500/10 text-warning-500;
+  border-color: rgba(255, 102, 0, 0.5);
+  box-shadow: 0 0 15px rgba(255, 102, 0, 0.25);
+}
+
+.threat-high {
+  @apply bg-danger-500/10 text-danger-500;
+  border-color: rgba(255, 0, 128, 0.5);
+  box-shadow: 0 0 15px rgba(255, 0, 128, 0.25);
+}
+
+/* Enhanced Leaflet custom styles */
+.leaflet-container {
+  height: 300px;
+  border-radius: 0.5rem;
+  background: #1a1a24 !important;
+  border: 1px solid #404050;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid #404050 !important;
+  background: rgba(26, 26, 36, 0.9) !important;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(26, 26, 36, 0.9) !important;
+  border: 1px solid #404050 !important;
+  color: #00ff41 !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: rgba(42, 42, 53, 0.9) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3) !important;
+}
+
+/* Enhanced Recharts custom styles for dark theme */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #404050 !important;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.recharts-cartesian-grid:hover .recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid:hover .recharts-cartesian-grid-vertical line {
+  opacity: 0.5;
+}
+
+.recharts-text {
+  fill: #9CA3AF !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+}
+
+.recharts-active-dot {
+  filter: drop-shadow(0 0 8px currentColor) !important;
+}
+
+.recharts-line {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.recharts-tooltip-wrapper {
+  z-index: 1000 !important;
+}
+
+.recharts-dot {
+  transition: all 0.2s ease !important;
+}
+
+.recharts-dot:hover {
+  transform: scale(1.5) !important;
+  filter: drop-shadow(0 0 10px currentColor) !important;
+}
+
+/* Custom scrollbar for webkit browsers */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #00ff41 #1a1a24;
+}
+
+/* Loading animation enhancements */
+@keyframes cyber-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    background: #2a2a35;
+  }
+  50% {
+    opacity: 0.6;
+    background: #3a3a45;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+  }
+}
+
+.animate-pulse {
+  animation: cyber-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Global glow effect for interactive elements */
+button:hover,
+input:focus,
+.interactive:hover {
+  transition: all 0.3s ease;
+}
+
+/* Cyberpunk input styling - prevent white background */
+input:focus {
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3) !important;
+  background-color: #2a2a35 !important;
+}
+
+/* Prevent input autofill from turning white */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #2a2a35 inset !important;
+  -webkit-text-fill-color: #00d4ff !important;
+  background-color: #2a2a35 !important;
+}
+
+/* Force dark background on all input states */
+input[type="text"] {
+  background-color: #2a2a35 !important;
+  color: #00d4ff !important;
+}
+
+/* Status dot override to ensure green color */
+.status-dot-green {
+  background-color: #00ff41 !important;
+  box-shadow: 0 0 8px #00ff41, 0 0 16px #00ff41 !important;
+}
+
+/* Network scanning animation */
+@keyframes scan-line {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-scan-line {
+  animation: scan-line 3s ease-in-out infinite;
+}
+
+/* Network pulse effects */
+@keyframes network-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.animate-network-pulse {
+  animation: network-pulse 2s ease-in-out infinite;
+}
+
+/* Connection flow animation */
+@keyframes connection-flow {
+  0% {
+    stroke-dashoffset: 20;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-connection-flow {
+  animation: connection-flow 1.5s linear infinite;
+}
+
+/* Terminal-style text selection */
+::selection {
+  background: rgba(0, 255, 65, 0.3);
+  color: #00ff41;
+  text-shadow: 0 0 5px #00ff41;
+}

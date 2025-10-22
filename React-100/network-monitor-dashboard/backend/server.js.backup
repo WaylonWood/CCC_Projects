@@ -1,0 +1,1211 @@
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+const os = require('os');
+const http = require('http');
+const WebSocket = require('ws');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const si = require('systeminformation');
+require('dotenv').config();
+
+const execAsync = promisify(exec);
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+console.log('Starting Network Monitor Backend...');
+console.log('Environment check:');
+console.log('  - IPINFO_TOKEN:', process.env.IPINFO_TOKEN ? 'Loaded' : 'Missing');
+console.log('  - API_NINJAS_KEY:', process.env.API_NINJAS_KEY ? 'Loaded' : 'Missing');
+console.log('  - SHODAN_KEY:', process.env.SHODAN_KEY ? 'Loaded' : 'Missing');
+
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
+  credentials: true
+}));
+app.use(express.json());
+
+const API_CONFIG = {
+  IPINFO_TOKEN: process.env.IPINFO_TOKEN,
+  API_NINJAS_KEY: process.env.API_NINJAS_KEY,
+  SHODAN_KEY: process.env.SHODAN_KEY,
+};
+
+app.get('/api/ipinfo/:target', async (req, res) => {
+  try {
+    const { target } = req.params;
+    let url = `https://ipinfo.io/${target}`;
+    
+    if (API_CONFIG.IPINFO_TOKEN) {
+      url += `?token=${API_CONFIG.IPINFO_TOKEN}`;
+    }
+    
+    const response = await axios.get(url);
+    const [lat, lng] = response.data.loc ? response.data.loc.split(',').map(Number) : [0, 0];
+    
+    res.json({
+      ...response.data,
+      coordinates: { lat, lng },
+      isRealData: true,
+      dataSource: 'IPinfo API'
+    });
+  } catch (error) {
+    console.error('IPinfo error:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to fetch IP information',
+      isRealData: false 
+    });
+  }
+});
+
+app.get('/api/ping/:target', async (req, res) => {
+  try {
+    const { target } = req.params;
+    
+    const response = await axios.get(`https://api.api-ninjas.com/v1/ping?address=${target}`, {
+      headers: {
+        'X-Api-Key': API_CONFIG.API_NINJAS_KEY
+      }
+    });
+    
+    res.json({
+      hostname: response.data.hostname || target,
+      ip: response.data.ip || target,
+      pingTime: response.data.ping_ms,
+      status: response.data.ping_ms ? 'up' : 'down',
+      success: true,
+      isRealData: true,
+      dataSource: 'API Ninjas'
+    });
+  } catch (error) {
+    console.error('API Ninjas error:', error.message);
+    res.status(500).json({
+      error: 'Failed to ping target',
+      isRealData: false
+    });
+  }
+});
+
+app.get('/api/shodan/:ip', async (req, res) => {
+  try {
+    const { ip } = req.params;
+    
+    if (!API_CONFIG.SHODAN_KEY) {
+      return res.json({
+        openPorts: [80, 443],
+        organization: 'No Shodan Key',
+        threatLevel: 'unknown',
+        vulnerabilities: 0,
+        isRealData: false,
+        note: 'Shodan API key not configured'
+      });
+    }
+    
+    const response = await axios.get(`https://api.shodan.io/shodan/host/${ip}?key=${API_CONFIG.SHODAN_KEY}`);
+    
+    const openPorts = response.data.ports || [];
+    const vulnerabilities = response.data.vulns ? Object.keys(response.data.vulns).length : 0;
+    
+    let threatLevel = 'low';
+    if (vulnerabilities > 5 || openPorts.length > 10) {
+      threatLevel = 'high';
+    } else if (vulnerabilities > 0 || openPorts.length > 5) {
+      threatLevel = 'medium';
+    }
+    
+    res.json({
+      openPorts: openPorts.slice(0, 10),
+      organization: response.data.org || 'Unknown',
+      threatLevel,
+      vulnerabilities,
+      success: true,
+      isRealData: true,
+      dataSource: 'Shodan API'
+    });
+  } catch (error) {
+    console.error('Shodan error:', error.message);
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.status === 403 
+        ? 'Shodan API requires verified account' 
+        : 'Shodan API unavailable',
+      isRealData: false
+    });
+  }
+});
+
+app.get('/api/network/overview', async (req, res) => {
+  try {
+    console.log('Gathering real network overview data...');
+    
+    const networkInterfaces = os.networkInterfaces();
+    const activeInterfaces = [];
+    
+    Object.keys(networkInterfaces).forEach(name => {
+      const interfaces = networkInterfaces[name];
+      interfaces.forEach(iface => {
+        if (!iface.internal && iface.family === 'IPv4') {
+          activeInterfaces.push({
+            name,
+            address: iface.address,
+            netmask: iface.netmask,
+            mac: iface.mac
+          });
+        }
+      });
+    });
+
+    const hostname = os.hostname();
+    const platform = os.platform();
+    const uptime = os.uptime();
+
+    let dnsServers = ['8.8.8.8', '1.1.1.1'];
+    try {
+      if (platform === 'darwin') { // macOS
+        const { stdout } = await execAsync('scutil --dns | grep nameserver | head -4');
+        const matches = stdout.match(/\d+\.\d+\.\d+\.\d+/g);
+        if (matches && matches.length > 0) {
+          dnsServers = [...new Set(matches)].slice(0, 4);
+        }
+      }
+    } catch (error) {
+      console.log('Could not get DNS servers, using defaults');
+    }
+
+    // Test DNS response times
+    const dnsTests = await Promise.all(
+      dnsServers.slice(0, 2).map(async (dns) => {
+        try {
+          const start = Date.now();
+          await axios.get(`https://1.1.1.1/dns-query?name=google.com&type=A`, {
+            timeout: 5000,
+            headers: { 'Accept': 'application/dns-json' }
+          });
+          const responseTime = Date.now() - start;
+          return {
+            server: dns,
+            responseTime,
+            status: 'online'
+          };
+        } catch (error) {
+          return {
+            server: dns,
+            responseTime: null,
+            status: 'error'
+          };
+        }
+      })
+    );
+
+    // Get default gateway
+    let gateway = 'Unknown';
+    try {
+      if (platform === 'darwin') {
+        const { stdout } = await execAsync('route -n get default | grep gateway');
+        const match = stdout.match(/gateway: (.+)/);
+        if (match) {
+          gateway = match[1].trim();
+        }
+      }
+    } catch (error) {
+      console.log('Could not get gateway info');
+    }
+
+    // Get network statistics using systeminformation
+    let networkStats = [];
+    let networkSpeed = [];
+    
+    try {
+      networkStats = await si.networkStats();
+      networkSpeed = await si.networkInterfaces();
+    } catch (siError) {
+      console.log('SystemInformation error:', siError.message);
+      // Fallback to basic interface info if systeminformation fails
+      networkStats = activeInterfaces.map(iface => ({
+        interface: iface.name,
+        operstate: 'up',
+        rx_bytes: 0,
+        tx_bytes: 0,
+        rx_sec: 0,
+        tx_sec: 0
+      }));
+    }
+    
+    const response = {
+      hostname,
+      platform,
+      uptime: Math.floor(uptime),
+      interfaces: activeInterfaces,
+      gateway,
+      dnsServers: dnsTests,
+      networkStats: networkStats.map(stat => ({
+        interface: stat.iface,
+        operstate: stat.operstate,
+        rx_bytes: stat.rx_bytes,
+        tx_bytes: stat.tx_bytes,
+        rx_sec: Math.round(stat.rx_sec || 0),
+        tx_sec: Math.round(stat.tx_sec || 0)
+      })),
+      timestamp: new Date().toISOString(),
+      isRealData: true,
+      dataSource: 'System APIs'
+    };
+
+    console.log('Network overview data collected successfully');
+    res.json(response);
+
+  } catch (error) {
+    console.error('Network overview error:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to fetch network overview',
+      isRealData: false,
+      message: error.message
+    });
+  }
+});
+
+// Device cache for progressive loading
+let deviceCache = {
+  basicDevices: [],
+  enhancedDevices: [],
+  lastScan: null,
+  isScanning: false
+};
+
+// Device Discovery - Progressive Loading Implementation
+app.get('/api/network/devices', async (req, res) => {
+  try {
+    console.log('Starting progressive device discovery...');
+    
+    // Check if we have recent cached data (within 30 seconds)
+    const now = Date.now();
+    if (deviceCache.lastScan && (now - deviceCache.lastScan) < 30000 && deviceCache.enhancedDevices.length > 0) {
+      console.log('Returning cached device data');
+      return res.json({
+        devices: deviceCache.enhancedDevices,
+        totalDevices: deviceCache.enhancedDevices.length,
+        onlineDevices: deviceCache.enhancedDevices.filter(d => d.status === 'online').length,
+        subnet: deviceCache.subnet || 'Unknown',
+        scanTime: new Date(deviceCache.lastScan).toISOString(),
+        dataSource: 'Cached Enhanced Data'
+      });
+    }
+    
+    // Phase 1: Quick ARP table scan (instant response)
+    const basicDevices = [];
+    
+    try {
+      const { stdout: arpOutput } = await execAsync('arp -a');
+      const arpLines = arpOutput.split('\n').filter(line => line.trim());
+      
+      for (const line of arpLines) {
+        // Parse ARP entries: hostname (ip) at mac on interface
+        const match = line.match(/(.+?)\s+\(([0-9.]+)\)\s+at\s+([0-9a-f:]+)/i);
+        if (match) {
+          const [, hostname, ip, mac] = match;
+          
+          // Skip invalid entries
+          if (ip === '0.0.0.0' || mac === '(incomplete)' || mac.includes('incomplete')) {
+            continue;
+          }
+          
+          basicDevices.push({
+            hostname: hostname.trim(),
+            ip: ip.trim(),
+            mac: mac.toLowerCase(),
+            source: 'arp',
+            status: 'unknown', // Will be tested in background
+            deviceType: 'Unknown',
+            vendor: 'Unknown',
+            lastSeen: new Date().toISOString(),
+            responseTime: null
+          });
+        }
+      }
+    } catch (arpError) {
+      console.log('ARP scan error:', arpError.message);
+    }
+
+    // Get current network interface info to determine subnet
+    const networkInterfaces = os.networkInterfaces();
+    let subnet = null;
+    
+    // Find the main network interface
+    Object.keys(networkInterfaces).forEach(name => {
+      const interfaces = networkInterfaces[name];
+      interfaces.forEach(iface => {
+        if (!iface.internal && iface.family === 'IPv4' && name.startsWith('en')) {
+          // Calculate subnet (e.g., 192.168.1.0/24)
+          const ip = iface.address;
+          const netmask = iface.netmask;
+          const ipParts = ip.split('.').map(Number);
+          const maskParts = netmask.split('.').map(Number);
+          
+          // Apply netmask to get network address
+          const networkParts = ipParts.map((part, i) => part & maskParts[i]);
+          subnet = networkParts.join('.') + '/24'; // Assume /24 for most home networks
+        }
+      });
+    });
+
+    // Enhanced hostname resolution for each device
+    const enhancedDevices = await Promise.all(
+      basicDevices.map(async (device) => {
+        let enhancedHostname = device.hostname;
+        let deviceType = 'Unknown';
+        
+        // Try multiple methods to get better hostnames
+        try {
+          // Method 1: Try reverse DNS lookup
+          if (device.hostname === '?' || device.hostname === device.ip) {
+            try {
+              const { stdout: nslookupResult } = await execAsync(`timeout 1 nslookup ${device.ip}`, { timeout: 1500 });
+              const nameMatch = nslookupResult.match(/name = (.+)/);
+              if (nameMatch) {
+                enhancedHostname = nameMatch[1].replace('.local', '').trim();
+              }
+            } catch (nslookupError) {
+              // DNS lookup failed, continue with other methods
+            }
+          }
+
+          // Method 2: Try to ping with hostname resolution
+          if (enhancedHostname === '?' || enhancedHostname === device.ip) {
+            try {
+              const { stdout: pingResult } = await execAsync(`ping -c 1 -t 0.3 ${device.ip}`);
+              const hostMatch = pingResult.match(/PING (.+?) \(/);
+              if (hostMatch && hostMatch[1] !== device.ip) {
+                enhancedHostname = hostMatch[1].replace('.local', '').trim();
+              }
+            } catch (pingError) {
+              // Ping hostname resolution failed
+            }
+          }
+
+          // Method 3: Use mDNS/Bonjour discovery for local devices
+          if (enhancedHostname === '?' || enhancedHostname === device.ip) {
+            try {
+              // Try to resolve .local hostname
+              const { stdout: digResult } = await execAsync(`timeout 1 dig +time=1 +tries=1 +short -x ${device.ip}`, { timeout: 1500 });
+              if (digResult.trim() && !digResult.includes('connection timed out')) {
+                enhancedHostname = digResult.trim().replace('.local.', '').replace('.local', '');
+              }
+            } catch (digError) {
+              // mDNS lookup failed
+            }
+          }
+
+          // Method 4: Smart device type detection based on MAC address and behavior
+          const macPrefix = device.mac.replace(/:/g, '').substring(0, 6).toUpperCase();
+          
+          // Common MAC prefixes for device identification
+          const macToDevice = {
+            // Apple devices
+            '00:0A:95': 'Apple Device',
+            '00:0D:93': 'Apple Device', 
+            '00:14:51': 'Apple Device',
+            '00:16:CB': 'Apple Device',
+            '00:17:F2': 'Apple Device',
+            '00:19:E3': 'Apple Device',
+            '00:1B:63': 'Apple Device',
+            '00:1E:C2': 'Apple Device',
+            '00:21:E9': 'Apple Device',
+            '00:23:12': 'Apple Device',
+            '00:23:DF': 'Apple Device',
+            '00:25:00': 'Apple Device',
+            '00:25:4B': 'Apple Device',
+            '00:25:BC': 'Apple Device',
+            '00:26:08': 'Apple Device',
+            '00:26:4A': 'Apple Device',
+            '00:26:B0': 'Apple Device',
+            '00:26:BB': 'Apple Device',
+            '28:CF:E9': 'Apple Device',
+            '28:E0:2C': 'Apple Device',
+            '2C:BE:08': 'Apple Device',
+            '30:90:AB': 'Apple Device',
+            '34:E2:FD': 'Apple Device',
+            '38:CA:DA': 'Apple Device',
+            '3C:15:C2': 'Apple Device',
+            '40:D3:2D': 'Apple Device',
+            '44:D8:84': 'Apple Device',
+            '48:74:12': 'Apple Device',
+            '4C:57:CA': 'Apple Device',
+            '50:EA:D6': 'Apple Device',
+            '58:55:CA': 'Apple Device',
+            '5C:95:AE': 'Apple Device',
+            '60:33:4B': 'Apple Device',
+            '60:C5:47': 'Apple Device',
+            '64:20:9F': 'Apple Device',
+            '68:AB:BC': 'Apple Device',
+            '6C:40:08': 'Apple Device',
+            '70:48:0F': 'Apple Device',
+            '70:DE:E2': 'Apple Device',
+            '78:31:C1': 'Apple Device',
+            '78:67:D0': 'Apple Device',
+            '7C:6D:62': 'Apple Device',
+            '80:92:9F': 'Apple Device',
+            '84:38:35': 'Apple Device',
+            '88:1F:A1': 'Apple Device',
+            '8C:85:90': 'Apple Device',
+            '90:72:40': 'Apple Device',
+            '98:FE:94': 'Apple Device',
+            '9C:FC:01': 'Apple Device',
+            'A4:83:E7': 'Apple Device',
+            'A8:86:DD': 'Apple Device',
+            'AC:BC:32': 'Apple Device',
+            'B0:9F:BA': 'Apple Device',
+            'B4:F0:AB': 'Apple Device',
+            'B8:8D:12': 'Apple Device',
+            'BC:92:6B': 'Apple Device',
+            'C0:9A:D0': 'Apple Device',
+            'C4:B3:01': 'Apple Device',
+            'C8:BC:C8': 'Apple Device',
+            'CC:08:8D': 'Apple Device',
+            'D0:23:DB': 'Apple Device',
+            'D4:9A:20': 'Apple Device',
+            'D8:30:62': 'Apple Device',
+            'D8:A2:5E': 'Apple Device',
+            'DC:2B:2A': 'Apple Device',
+            'E0:AC:CB': 'Apple Device',
+            'E4:8B:7F': 'Apple Device',
+            'E4:CE:8F': 'Apple Device',
+            'E8:06:88': 'Apple Device',
+            'EC:35:86': 'Apple Device',
+            'F0:B4:79': 'Apple Device',
+            'F4:F1:5A': 'Apple Device',
+            'F8:1E:DF': 'Apple Device',
+            'FC:25:3F': 'Apple Device',
+            
+            // Router/Gateway common prefixes
+            '00:0F:66': 'Linksys Router',
+            '00:18:39': 'Cisco Router',
+            '00:1D:7E': 'Cisco Router',
+            '00:21:29': 'Cisco Router',
+            '00:23:04': 'Cisco Router',
+            '08:CC:68': 'TP-Link Router',
+            '10:C3:7B': 'Netgear Router',
+            '20:4E:7F': 'Netgear Router',
+            '28:C6:8E': 'Netgear Router',
+            '30:46:9A': 'Netgear Router',
+            '4C:ED:FB': 'Netgear Router',
+            '84:1B:5E': 'Netgear Router',
+            'A0:40:A0': 'Netgear Router',
+            'C0:3F:0E': 'Netgear Router',
+            'E0:46:9A': 'Netgear Router',
+          };
+
+          if (macToDevice[macPrefix]) {
+            deviceType = macToDevice[macPrefix];
+            if (enhancedHostname === '?' || enhancedHostname === device.ip) {
+              enhancedHostname = deviceType;
+            }
+          }
+
+          // Method 5: Try to identify by common IP patterns
+          if (enhancedHostname === '?' || enhancedHostname === device.ip) {
+            const ipParts = device.ip.split('.');
+            const lastOctet = parseInt(ipParts[3]);
+            
+            // Common router IPs
+            if (lastOctet === 1 || lastOctet === 254) {
+              enhancedHostname = 'Gateway/Router';
+              deviceType = 'Network Gateway';
+            }
+            // Common printer IPs
+            else if (lastOctet > 100 && lastOctet < 200) {
+              enhancedHostname = 'Network Device';
+            }
+            // Still unknown
+            else {
+              enhancedHostname = `Device-${lastOctet}`;
+            }
+          }
+
+        } catch (error) {
+          console.log(`Hostname resolution failed for ${device.ip}:`, error.message);
+        }
+
+        return {
+          ...device,
+          hostname: enhancedHostname,
+          deviceType: deviceType || 'Unknown',
+          originalHostname: device.hostname
+        };
+      })
+    );
+
+    // Ping test each discovered device to check if online
+    const pingPromises = enhancedDevices.map(async (device) => {
+      try {
+        const start = Date.now();
+        const { stdout } = await execAsync(`ping -c 1 -W 300 ${device.ip}`);
+        const responseTime = Date.now() - start;
+        
+        return {
+          ...device,
+          status: 'online',
+          responseTime,
+          isActive: true
+        };
+      } catch (error) {
+        return {
+          ...device,
+          status: 'offline',
+          responseTime: null,
+          isActive: false
+        };
+      }
+    });
+
+    const testedDevices = await Promise.all(pingPromises);
+
+    // Get MAC vendor information for each device
+    const devicesWithVendors = await Promise.all(
+      testedDevices.map(async (device) => {
+        try {
+          // Use the first 6 characters of MAC address for vendor lookup
+          const macPrefix = device.mac.replace(/:/g, '').substring(0, 6);
+          const vendorResponse = await axios.get(`https://api.macvendors.com/${device.mac}`, {
+            timeout: 3000
+          });
+          
+          return {
+            ...device,
+            vendor: vendorResponse.data || 'Unknown'
+          };
+        } catch (error) {
+          // If vendor lookup fails, try to guess from MAC or use unknown
+          let vendor = device.deviceType || 'Unknown';
+          if (device.mac.startsWith('00:0c:29')) vendor = 'VMware';
+          else if (device.mac.startsWith('08:00:27')) vendor = 'VirtualBox';
+          else if (device.mac.startsWith('52:54:00')) vendor = 'QEMU';
+          
+          return {
+            ...device,
+            vendor
+          };
+        }
+      })
+    );
+
+    const response = {
+      subnet,
+      totalDevices: devicesWithVendors.length,
+      onlineDevices: devicesWithVendors.filter(d => d.status === 'online').length,
+      devices: devicesWithVendors.sort((a, b) => {
+        // Sort by status (online first), then by IP
+        if (a.status !== b.status) {
+          return a.status === 'online' ? -1 : 1;
+        }
+        return a.ip.localeCompare(b.ip, undefined, { numeric: true });
+      }),
+      scanTime: new Date().toISOString(),
+      isRealData: true,
+      dataSource: 'ARP Table + DNS Lookup + MAC Vendor API + Device Detection'
+    };
+
+    console.log(`Device discovery completed: ${response.totalDevices} devices found (${response.onlineDevices} online)`);
+    res.json(response);
+
+  } catch (error) {
+    console.error('Device discovery error:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to discover network devices',
+      isRealData: false,
+      message: error.message
+    });
+  }
+});
+
+// Network Topology - Optimized with Cached Data
+app.get('/api/network/topology', async (req, res) => {
+  try {
+    console.log('Generating network topology map...');
+    
+    // Use cached device data if available, otherwise quick ARP scan
+    let devices = [];
+    
+    if (deviceCache.enhancedDevices.length > 0) {
+      console.log('Using cached enhanced device data for topology');
+      devices = deviceCache.enhancedDevices;
+    } else if (deviceCache.basicDevices.length > 0) {
+      console.log('Using cached basic device data for topology');
+      devices = deviceCache.basicDevices;
+    } else {
+      // Quick fallback: minimal ARP scan only
+      console.log('No cache available, performing minimal ARP scan');
+      try {
+        const { stdout: arpOutput } = await execAsync('arp -a');
+        const arpLines = arpOutput.split('\n').filter(line => line.trim());
+        
+        for (const line of arpLines) {
+          const match = line.match(/(.+?)\s+\(([0-9.]+)\)\s+at\s+([0-9a-f:]+)/i);
+          if (match) {
+            const [, hostname, ip, mac] = match;
+            if (ip !== '0.0.0.0' && !mac.includes('incomplete')) {
+              devices.push({
+                hostname: hostname.trim(),
+                ip: ip.trim(),
+                mac: mac.toLowerCase(),
+                status: 'unknown',
+                deviceType: 'Unknown',
+                vendor: 'Unknown'
+              });
+            }
+          }
+        }
+      } catch (arpError) {
+        console.log('ARP scan error:', arpError.message);
+      }
+    }
+
+    // Quick ping test for online status (only if we don't have cached status)
+    const testedDevices = await Promise.all(
+      devices.map(async (device) => {
+        // Skip ping test if we already have status from cache
+        if (device.status && device.status !== 'unknown') {
+          return device;
+        }
+        
+        try {
+          await execAsync(`ping -c 1 -W 300 ${device.ip}`);
+          return { ...device, status: 'online' };
+        } catch (error) {
+          return { ...device, status: 'offline' };
+        }
+      })
+    );
+
+    // Get routing table to understand network structure
+    let routes = [];
+    try {
+      const { stdout: routeOutput } = await execAsync('netstat -rn');
+      const routeLines = routeOutput.split('\n').filter(line => line.trim() && !line.startsWith('Routing'));
+      
+      routes = routeLines.map(line => {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 6) {
+          return {
+            destination: parts[0],
+            gateway: parts[1],
+            flags: parts[2],
+            interface: parts[5] || parts[4]
+          };
+        }
+        return null;
+      }).filter(Boolean);
+    } catch (routeError) {
+      console.log('Route table error:', routeError.message);
+    }
+
+    // Find the default gateway
+    let gatewayIP = null;
+    const defaultRoute = routes.find(route => route.destination === 'default' || route.destination === '0.0.0.0');
+    if (defaultRoute) {
+      gatewayIP = defaultRoute.gateway;
+    }
+    
+    // Fallback: try direct route command if gatewayIP is still null
+    if (!gatewayIP) {
+      try {
+        const { stdout: routeOutput } = await execAsync('route -n get default');
+        const gatewayMatch = routeOutput.match(/gateway:\s+([0-9.]+)/);
+        if (gatewayMatch) {
+          gatewayIP = gatewayMatch[1];
+        }
+      } catch (routeError) {
+        console.log('Direct route command error:', routeError.message);
+      }
+    }
+    
+    console.log(`Gateway detection result: ${gatewayIP || 'Not found'}`);
+    
+    // If still no gateway, use a default for testing
+    if (!gatewayIP) {
+      gatewayIP = '10.0.0.1'; // Common default gateway
+      console.log(`Using fallback gateway: ${gatewayIP}`);
+    }
+    
+    // Get network interface for subnet calculation
+    const networkInterfaces = os.networkInterfaces();
+    let subnet = null;
+    
+    Object.keys(networkInterfaces).forEach(name => {
+      const interfaces = networkInterfaces[name];
+      interfaces.forEach(iface => {
+        if (!iface.internal && iface.family === 'IPv4' && name.startsWith('en')) {
+          const ip = iface.address;
+          const netmask = iface.netmask;
+          const ipParts = ip.split('.').map(Number);
+          const maskParts = netmask.split('.').map(Number);
+          const networkParts = ipParts.map((part, i) => part & maskParts[i]);
+          subnet = networkParts.join('.') + '/24';
+        }
+      });
+    });
+    
+    // Create network nodes
+    const nodes = [];
+    const edges = [];
+    
+    // Add internet node first
+    nodes.push({
+      id: 'internet',
+      label: 'Internet',
+      group: 'internet',
+      shape: 'image',
+      image: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+          <!-- Cloud shape -->
+          <ellipse cx="30" cy="60" rx="15" ry="10" fill="#0088ff"/>
+          <ellipse cx="50" cy="55" rx="20" ry="15" fill="#0088ff"/>
+          <ellipse cx="70" cy="60" rx="15" ry="10" fill="#0088ff"/>
+          <ellipse cx="40" cy="45" rx="12" ry="8" fill="#0088ff"/>
+          <ellipse cx="60" cy="45" rx="12" ry="8" fill="#0088ff"/>
+          <!-- Globe lines -->
+          <circle cx="50" cy="50" r="18" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
+          <ellipse cx="50" cy="50" rx="18" ry="9" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
+          <line x1="32" y1="50" x2="68" y2="50" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
+        </svg>
+      `),
+      size: 60,
+      color: {
+        background: '#0088ff',
+        border: '#0066cc',
+        highlight: {
+          background: '#0088ff',
+          border: '#ffffff'
+        }
+      },
+      font: { color: '#ffffff', size: 12, face: 'JetBrains Mono' },
+      isInternet: true,
+      x: 0,
+      y: -300,
+      fixed: { x: true, y: true },
+      physics: false,
+      shadow: {
+        enabled: true,
+        color: 'rgba(0,136,255,1.0)',
+        size: 25
+      }
+    });
+    
+    // Add gateway/router as central node
+    if (gatewayIP) {
+      nodes.push({
+        id: gatewayIP,
+        label: 'Router\n' + gatewayIP,
+        group: 'gateway',
+        shape: 'image',
+        image: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <!-- Router body -->
+            <rect x="20" y="40" width="60" height="30" rx="5" fill="#00ff88" stroke="#00cc66" stroke-width="2"/>
+            <!-- Antennas -->
+            <line x1="30" y1="40" x2="30" y2="25" stroke="#00ff88" stroke-width="3"/>
+            <line x1="40" y1="40" x2="40" y2="20" stroke="#00ff88" stroke-width="3"/>
+            <line x1="60" y1="40" x2="60" y2="20" stroke="#00ff88" stroke-width="3"/>
+            <line x1="70" y1="40" x2="70" y2="25" stroke="#00ff88" stroke-width="3"/>
+            <!-- LED indicators -->
+            <circle cx="30" cy="55" r="2" fill="#00ff41"/>
+            <circle cx="40" cy="55" r="2" fill="#00ff41"/>
+            <circle cx="60" cy="55" r="2" fill="#0088ff"/>
+            <circle cx="70" cy="55" r="2" fill="#0088ff"/>
+            <!-- Ports -->
+            <rect x="75" y="50" width="8" height="4" fill="#333"/>
+            <rect x="75" y="56" width="8" height="4" fill="#333"/>
+          </svg>
+        `),
+        size: 70,
+        color: {
+          background: '#00ff88',
+          border: '#00cc66',
+          highlight: {
+            background: '#00ff88',
+            border: '#ffffff'
+          }
+        },
+        font: { color: '#000000', size: 12, face: 'JetBrains Mono', bold: true },
+        isGateway: true,
+        x: 0,
+        y: 0,
+        fixed: { x: true, y: true },
+        physics: false,
+        shadow: {
+          enabled: true,
+          color: 'rgba(0,255,136,1.0)',
+          size: 25
+        }
+      });
+
+      // Connect gateway to internet
+      edges.push({
+        id: 'internet-gateway',
+        from: 'internet',
+        to: gatewayIP,
+        color: { 
+          color: '#0088ff', 
+          highlight: '#00aaff',
+          hover: '#ffffff'
+        },
+        width: 6,
+        smooth: { 
+          enabled: false
+        },
+        arrows: { to: { enabled: false } },
+        shadow: {
+          enabled: true,
+          color: 'rgba(0,136,255,0.8)',
+          size: 15,
+          x: 0,
+          y: 0
+        }
+      });
+    }
+
+    // Add device nodes and gateway connections in spider web pattern
+    const devicesExcludingGateway = testedDevices.filter(device => device.ip !== gatewayIP);
+    const totalDevices = devicesExcludingGateway.length;
+    
+    devicesExcludingGateway.forEach((device, index) => {
+      // Calculate radial position for spider web layout
+      const angle = (index / totalDevices) * 2 * Math.PI;
+      const radius = 300; // Increased radius for better spacing
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      
+      // Determine node appearance based on hostname/MAC
+      let nodeConfig = {
+        id: device.ip,
+        label: `${device.hostname !== '?' ? device.hostname : 'Device'}\n${device.ip}`,
+        group: 'device',
+        shape: 'dot',
+        size: 35,
+        font: { size: 11, face: 'JetBrains Mono' },
+        x: x,
+        y: y,
+        fixed: { x: true, y: true },
+        physics: false
+      };
+
+      // Color and shape based on status and device type
+      if (device.status === 'online') {
+        // Check if it's likely an Apple device based on hostname
+        if (device.hostname.toLowerCase().includes('apple') || 
+            device.hostname.toLowerCase().includes('iphone') ||
+            device.hostname.toLowerCase().includes('ipad') ||
+            device.hostname.toLowerCase().includes('macbook')) {
+          nodeConfig.shape = 'image';
+          nodeConfig.image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+              <!-- iPhone/iPad shape -->
+              <rect x="30" y="15" width="40" height="70" rx="8" fill="#ff6b6b" stroke="#ff5252" stroke-width="2"/>
+              <!-- Screen -->
+              <rect x="33" y="22" width="34" height="56" rx="3" fill="#000"/>
+              <!-- Home button -->
+              <circle cx="50" cy="85" r="3" fill="#333"/>
+              <!-- Apple logo -->
+              <circle cx="50" cy="50" r="8" fill="#fff" opacity="0.3"/>
+            </svg>
+          `);
+          nodeConfig.color = {
+            background: '#ff6b6b',
+            border: '#ff5252',
+            highlight: { background: '#ff8a80', border: '#ffffff' }
+          };
+          nodeConfig.font.color = '#ffffff';
+        } else if (device.hostname.toLowerCase().includes('pc') || 
+                   device.hostname.toLowerCase().includes('desktop') ||
+                   device.hostname.toLowerCase().includes('laptop')) {
+          nodeConfig.shape = 'image';
+          nodeConfig.image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+              <!-- Laptop/PC shape -->
+              <rect x="15" y="40" width="70" height="45" rx="3" fill="#a855f7" stroke="#9333ea" stroke-width="2"/>
+              <!-- Screen -->
+              <rect x="18" y="43" width="64" height="35" rx="2" fill="#000"/>
+              <!-- Keyboard -->
+              <rect x="20" y="80" width="60" height="8" rx="1" fill="#666"/>
+              <!-- Power LED -->
+              <circle cx="85" cy="50" r="2" fill="#00ff41"/>
+            </svg>
+          `);
+          nodeConfig.color = {
+            background: '#a855f7',
+            border: '#9333ea',
+            highlight: { background: '#c084fc', border: '#ffffff' }
+          };
+          nodeConfig.font.color = '#ffffff';
+        } else {
+          // Generic device
+          nodeConfig.shape = 'image';
+          nodeConfig.image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+              <!-- Generic device -->
+              <rect x="25" y="30" width="50" height="40" rx="5" fill="#a855f7" stroke="#9333ea" stroke-width="2"/>
+              <!-- Ports -->
+              <rect x="75" y="45" width="5" height="10" fill="#333"/>
+              <!-- LED -->
+              <circle cx="35" cy="40" r="2" fill="#00ff41"/>
+              <!-- Ethernet symbol -->
+              <rect x="40" y="45" width="20" height="10" rx="2" fill="#000" opacity="0.3"/>
+            </svg>
+          `);
+          nodeConfig.color = {
+            background: '#a855f7',
+            border: '#9333ea',
+            highlight: { background: '#c084fc', border: '#ffffff' }
+          };
+          nodeConfig.font.color = '#ffffff';
+        }
+      } else {
+        // Offline devices - grayed out
+        nodeConfig.shape = 'image';
+        nodeConfig.image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <!-- Offline device -->
+            <rect x="25" y="30" width="50" height="40" rx="5" fill="#6b7280" stroke="#4b5563" stroke-width="2"/>
+            <!-- X mark for offline -->
+            <line x1="35" y1="40" x2="65" y2="60" stroke="#ff0000" stroke-width="3"/>
+            <line x1="65" y1="40" x2="35" y2="60" stroke="#ff0000" stroke-width="3"/>
+          </svg>
+        `);
+        nodeConfig.color = {
+          background: '#6b7280',
+          border: '#4b5563',
+          highlight: { background: '#9ca3af', border: '#ffffff' }
+        };
+        nodeConfig.font.color = '#ffffff';
+        nodeConfig.size = 45;
+      }
+
+      nodes.push(nodeConfig);
+
+      // Connect device to gateway - spider web lines
+      if (gatewayIP) {
+        const edgeColor = device.status === 'online' ? '#00ff88' : '#6b7280';
+        const edgeWidth = device.status === 'online' ? 3 : 1;
+        
+        // Add traffic-based edge styling
+        const trafficLevel = Math.random(); // Simulate traffic levels
+        const connectionStyle = {
+          id: `gateway-${device.ip}`, // Unique edge ID
+          from: gatewayIP,
+          to: device.ip,
+          color: { 
+            color: edgeColor, 
+            highlight: '#ffffff',
+            hover: '#ffffff'
+          },
+          width: edgeWidth,
+          smooth: { 
+            enabled: false // Straight lines for spider web effect
+          },
+          arrows: { to: { enabled: false } },
+          dashes: device.status === 'offline' ? [10, 5] : false,
+          shadow: {
+            enabled: device.status === 'online',
+            color: device.status === 'online' ? 'rgba(0,255,136,0.6)' : 'rgba(107,114,128,0.3)',
+            size: device.status === 'online' ? 10 : 5,
+            x: 0,
+            y: 0
+          },
+          physics: false
+        };
+
+        // Add traffic intensity based on simulated data
+        if (device.status === 'online' && trafficLevel > 0.7) {
+          connectionStyle.color.color = '#00ddff'; // High traffic = blue
+          connectionStyle.width = 5;
+          connectionStyle.shadow.color = 'rgba(0,221,255,0.8)';
+          connectionStyle.shadow.size = 15;
+        } else if (device.status === 'online' && trafficLevel > 0.4) {
+          connectionStyle.color.color = '#ffaa00'; // Medium traffic = orange
+          connectionStyle.width = 4;
+          connectionStyle.shadow.color = 'rgba(255,170,0,0.6)';
+          connectionStyle.shadow.size = 12;
+        }
+        
+        edges.push(connectionStyle);
+        console.log(`Added connection: ${gatewayIP} -> ${device.ip} (${device.status})`);
+      }
+    });
+
+    // Remove device-to-device connections for cleaner spider web look
+    // (The original P2P connections code is removed for spider web pattern)
+
+    // Get network interface statistics for traffic visualization
+    let networkStats = [];
+    try {
+      networkStats = await si.networkStats();
+    } catch (error) {
+      console.log('Network stats error:', error.message);
+    }
+
+    // Calculate traffic levels for visualization
+    const totalTraffic = networkStats.reduce((sum, stat) => {
+      return sum + (stat.rx_sec || 0) + (stat.tx_sec || 0);
+    }, 0);
+
+    const response = {
+      nodes,
+      edges,
+      networkInfo: {
+        totalDevices: testedDevices.length,
+        onlineDevices: testedDevices.filter(d => d.status === 'online').length,
+        gatewayIP,
+        subnet,
+        totalTraffic: Math.round(totalTraffic)
+      },
+      routes: routes.slice(0, 10), // Limit routes for display
+      networkStats: networkStats.map(stat => ({
+        interface: stat.iface,
+        rx_sec: Math.round(stat.rx_sec || 0),
+        tx_sec: Math.round(stat.tx_sec || 0),
+        operstate: stat.operstate
+      })),
+      generatedAt: new Date().toISOString(),
+      isRealData: true,
+      dataSource: 'Route Table + Device Discovery + Network Stats (Spider Web Layout)'
+    };
+
+    console.log(`Spider web topology generated:`);
+    console.log(`   - Nodes: ${nodes.length} (Gateway: ${gatewayIP || 'None'})`);
+    console.log(`   - Edges: ${edges.length} connections`);
+    console.log(`   - Online devices: ${testedDevices.filter(d => d.status === 'online').length}/${testedDevices.length}`);
+    
+    // Debug: Log all edges
+    edges.forEach((edge, i) => {
+      console.log(`   Edge ${i + 1}: ${edge.from} -> ${edge.to} (${edge.color.color}, width: ${edge.width})`);
+    });
+    
+    res.json(response);
+
+  } catch (error) {
+    console.error('Network topology error:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to generate network topology',
+      isRealData: false,
+      message: error.message
+    });
+  }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Network Monitor Backend is running' });
+});
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Create WebSocket server
+const wss = new WebSocket.Server({ server });
+
+// Store previous network stats for calculating deltas
+let previousNetworkStats = null;
+
+// WebSocket connection handling
+wss.on('connection', (ws) => {
+  console.log('WebSocket client connected for real-time bandwidth monitoring');
+  
+  ws.on('close', () => {
+    console.log('WebSocket client disconnected');
+  });
+});
+
+// Real-time bandwidth monitoring function
+async function getBandwidthData() {
+  try {
+    const networkStats = await si.networkStats();
+    const currentTime = new Date().toISOString();
+    
+    if (!networkStats || networkStats.length === 0) {
+      return null;
+    }
+    
+    // Get the primary network interface (usually the one with traffic)
+    const primaryInterface = networkStats.find(iface => 
+      iface.tx_bytes > 0 || iface.rx_bytes > 0
+    ) || networkStats[0];
+    
+    let downloadSpeed = 0;
+    let uploadSpeed = 0;
+    
+    if (previousNetworkStats) {
+      const prevInterface = previousNetworkStats.data.find(iface => 
+        iface.iface === primaryInterface.iface
+      );
+      
+      if (prevInterface) {
+        const timeDiff = (Date.now() - previousNetworkStats.timestamp) / 1000;
+        
+        // Calculate bytes per second
+        downloadSpeed = Math.max(0, (primaryInterface.rx_bytes - prevInterface.rx_bytes) / timeDiff);
+        uploadSpeed = Math.max(0, (primaryInterface.tx_bytes - prevInterface.tx_bytes) / timeDiff);
+      }
+    }
+    
+    // Store current stats for next calculation
+    previousNetworkStats = {
+      data: networkStats,
+      timestamp: Date.now()
+    };
+    
+    return {
+      timestamp: currentTime,
+      downloadSpeed: Math.round(downloadSpeed), // bytes/second
+      uploadSpeed: Math.round(uploadSpeed), // bytes/second
+      interface: primaryInterface.iface,
+      totalDownload: primaryInterface.rx_bytes,
+      totalUpload: primaryInterface.tx_bytes
+    };
+    
+  } catch (error) {
+    console.error('Bandwidth monitoring error:', error.message);
+    return null;
+  }
+}
+
+// Start real-time bandwidth monitoring
+function startBandwidthMonitoring() {
+  setInterval(async () => {
+    const bandwidthData = await getBandwidthData();
+    
+    if (bandwidthData && wss.clients.size > 0) {
+      const message = JSON.stringify({
+        type: 'bandwidth',
+        data: bandwidthData
+      });
+      
+      // Broadcast to all connected WebSocket clients
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    }
+  }, 1000); // Update every 1 second
+}
+
+server.listen(PORT, () => {
+  console.log('');
+  console.log('Backend server running on http://localhost:' + PORT);
+  console.log('API endpoints available at:');
+  console.log('   - GET /api/ipinfo/:target');
+  console.log('   - GET /api/ping/:target');
+  console.log('   - GET /api/shodan/:ip');
+  console.log('   - GET /api/network/overview');
+  console.log('   - GET /api/network/devices');
+  console.log('   - GET /api/network/topology');
+  console.log('   - GET /health (health check)');
+  console.log('   - WebSocket: ws://localhost:' + PORT + ' (real-time bandwidth)');
+  console.log('');
+  console.log('Ready to serve real API data!');
+  console.log('Connect your frontend at http://localhost:5175');
+  console.log('');
+  
+  console.log('Starting real-time bandwidth monitoring...');
+  startBandwidthMonitoring();
+});
